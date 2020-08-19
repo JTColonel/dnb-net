@@ -8,5 +8,5 @@ pyAudio==0.2.11
 scipy==1.4.1
 SoundFile==0.10.2
 subprocess32==3.5.4
-tensorflow==2.2.0
+tensorflow==1.14.0
 tqdm==4.36.1

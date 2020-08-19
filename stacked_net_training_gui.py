@@ -1,14 +1,12 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior() 
 import tensorflow.keras 
 from tensorflow.keras.layers import Input, Dense, Lambda, Concatenate, Dropout, LeakyReLU, Multiply, Add
 from tensorflow.keras.models import Model, Sequential, load_model, clone_model
 from tensorflow.keras.activations import linear
-
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.losses import mse
 from tensorflow.keras.callbacks import LambdaCallback
@@ -17,29 +15,26 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.python.keras import backend as K
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import argparse
 import os
 import librosa
 
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
 from tkinter import *
-import numpy as np
-import pandas as pd
-import os
-import librosa
 import soundfile as sf
 import argparse
 import pyaudio
-import numpy as np
-from tensorflow.keras.layers import Input, Dense, LeakyReLU
-from tensorflow.keras.models import Model, load_model
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior() 
 from scipy import signal
 import time
 import sys
 import scipy, pylab
-
+import sklearn.utils._cython_blas
+import sklearn.neighbors.typedefs
+import sklearn.neighbors.quad_tree
+import sklearn.tree
+import sklearn.tree._utils
 
 
 global alpha

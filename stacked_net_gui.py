@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
 from tkinter import *
 import numpy as np
 import pandas as pd
@@ -7,7 +10,7 @@ import soundfile as sf
 import argparse
 import pyaudio
 import numpy as np
-from tensorflow.keras.layers import Input, Dense, LeakyReLU
+#from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.models import Model, load_model
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior() 
@@ -15,6 +18,13 @@ from scipy import signal
 import time
 import sys
 import scipy, pylab
+import sklearn.utils._cython_blas
+import sklearn.neighbors.typedefs
+import sklearn.neighbors.quad_tree
+import sklearn.tree
+import sklearn.tree._utils
+
+
 
 RATE     = int(44100)
 CHUNK    = int(1024)
