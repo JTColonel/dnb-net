@@ -1,14 +1,12 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior() 
 import tensorflow.keras 
 from tensorflow.keras.layers import Input, Dense, Lambda, Concatenate, Dropout, LeakyReLU, Multiply, Add
 from tensorflow.keras.models import Model, Sequential, load_model, clone_model
 from tensorflow.keras.activations import linear
-
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.losses import mse
 from tensorflow.keras.callbacks import LambdaCallback
@@ -17,29 +15,26 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.python.keras import backend as K
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import argparse
 import os
 import librosa
 
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
 from tkinter import *
-import numpy as np
-import pandas as pd
-import os
-import librosa
 import soundfile as sf
 import argparse
 import pyaudio
-import numpy as np
-from tensorflow.keras.layers import Input, Dense, LeakyReLU
-from tensorflow.keras.models import Model, load_model
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior() 
 from scipy import signal
 import time
 import sys
 import scipy, pylab
-
+import sklearn.utils._cython_blas
+import sklearn.neighbors.typedefs
+import sklearn.neighbors.quad_tree
+import sklearn.tree
+import sklearn.tree._utils
 
 
 global alpha
@@ -119,7 +114,7 @@ class Application(Frame):
         np.random.shuffle(orig_frames_2)
         len_frames = orig_frames_2.shape[0]
 
-        self.frames = np.hstack((orig_frames_1[:10000,:],orig_frames_2[:10000,:])) ##Requires 4 minutes of audio
+        self.frames = np.hstack((orig_frames_1[:int(self.datasize.get()),:],orig_frames_2[:int(self.datasize.get()),:])) 
 
         orig_frames_1 = None
         orig_frames_2 = None
@@ -243,7 +238,7 @@ class Application(Frame):
         else:
             self.network.compile(optimizer=Adam(lr=adam_rate), loss=self.my_mse2)
             self.network.fit(x=train_data, y=train_target,
-                    epochs=self.n_epochs,
+                    epochs=int(self.epochs.get()),
                     batch_size=200,
                     shuffle=True,
                     validation_data=(val_data, val_target)
@@ -406,6 +401,40 @@ class Application(Frame):
         self.LOAD.pack()
         self.LOAD.place(relx=0.45,rely=0.42)
 
+    def createButtons(self):
+        global chroma_val
+        self.datasize = IntVar()
+        self.datasize.set(2500)
+        NOTE_OPTIONS = [
+        ('one minute',2500),
+        ('four minutes',10000),
+        ('ten minutes',25000),
+        ]
+        xx = 1.
+
+        for text, val in NOTE_OPTIONS:
+            b = Radiobutton(self, text=text, value=val, variable=self.datasize)
+            b.pack()
+            b.place(relx=xx/5.,rely=0.1)
+            xx+=1
+
+    def createEpochButtons(self):
+        global chroma_val
+        self.epochs = IntVar()
+        self.epochs.set(50)
+        NOTE_OPTIONS = [
+        ('50 iterations',50),
+        ('150 iterations',150),
+        ('300 iterations',300),
+        ]
+        xx = 1.
+
+        for text, val in NOTE_OPTIONS:
+            b = Radiobutton(self, text=text, value=val, variable=self.epochs)
+            b.pack()
+            b.place(relx=xx/5.,rely=0.2)
+            xx+=1
+
 
     def __init__(self, master=None):
         global recorded_scales
@@ -433,6 +462,8 @@ class Application(Frame):
         Frame.__init__(self, master,width=800, height=800)
         self.pack()
         self.createWidgets()
+        self.createButtons()
+        self.createEpochButtons()
         recorded_scales = []
         self.Args = Args()
 
