@@ -60,7 +60,9 @@ class Application(Frame):
         global drumalpha
         global bassalpha
         global len_window
-        global tick 
+        global tick
+        global drum_bypass
+        global bass_bypass
         num_samps = seg_length*CHUNK
         make_audio = False
         
@@ -127,10 +129,16 @@ class Application(Frame):
         _, now_out = np.float32(signal.istft(0.24*D, fs=44100, noverlap=3*1024))
         drum_out = now_out[CHUNK:-2*CHUNK]
 
+        if drum_bypass==1:
+            drum_out = drumalpha*drumsnip1[CHUNK:-2*CHUNK] + (1-drumalpha)*drumsnip2[CHUNK:-2*CHUNK] 
+
         bass_out_mag = temp_bass_mag.T * temp_bassremember
         B = bass_out_mag*np.exp(1j*temp_bassphase)
         _, now_out = np.float32(signal.istft(0.24*B, fs=44100, noverlap=3*1024))
         bass_out = now_out[CHUNK:-2*CHUNK]
+
+        if bass_bypass==1:
+            bass_out = bassalpha*basssnip1[CHUNK:-2*CHUNK] + (1-bassalpha)*basssnip2[CHUNK:-2*CHUNK]
 
         out = 4*(drum_gain*drum_out+bass_gain*bass_out)
 
@@ -277,9 +285,28 @@ class Application(Frame):
 
     def quit(self):
         root.destroy()
-        
+
+    def reset_drum(self):
+        global num_latents
+        for w in range(num_latents):
+            self.drum_scale_list[w].set(100)
+
+    def reset_bass(self):
+        global num_latents
+        for w in range(num_latents):
+            self.bass_scale_list[w].set(100)
 
     def createWidgets(self):
+        self.drum_bypass = IntVar()
+        self.DRUM_BP = Checkbutton(self, text='DBp', variable=self.drum_bypass)
+        self.DRUM_BP.pack()
+        self.DRUM_BP.place(relx=0,rely=0.95)
+
+        self.bass_bypass = IntVar()
+        self.BASS_BP = Checkbutton(self, text='BBp', variable=self.bass_bypass)
+        self.BASS_BP.pack()
+        self.BASS_BP.place(relx=0.9,rely=0.95)
+        
         self.QUIT = Button(self)
         self.QUIT["text"] = "QUIT"
         self.QUIT["fg"]   = "red"
@@ -289,45 +316,45 @@ class Application(Frame):
 
         self.model_name = Entry(self)
         self.model_name.pack()
-        self.model_name.place(relx=0.4,rely=0.37)
+        self.model_name.place(relx=0.4,rely=0.385)
         self.label = Label(self,text='Model Name')
         self.label.pack()
-        self.label.place(relx=0.25,rely=0.37)
+        self.label.place(relx=0.25,rely=0.385)
 
         self.LOADMODEL = Button(self)
         self.LOADMODEL["text"] = "LOAD MODEL"
         self.LOADMODEL["fg"]   = "black"
         self.LOADMODEL["command"] =  lambda: self.model_to_mem()
         self.LOADMODEL.pack()
-        self.LOADMODEL.place(relx=0.62,rely=0.37)
+        self.LOADMODEL.place(relx=0.64,rely=0.385)
 
         self.track1_name = Entry(self)
         self.track1_name.pack()
-        self.track1_name.place(relx=0.20,rely=0.32)
+        self.track1_name.place(relx=0.20,rely=0.33)
         self.label_1 = Label(self,text='Drum 1')
         self.label_1.pack()
-        self.label_1.place(relx=0.14,rely=0.32)
+        self.label_1.place(relx=0.12,rely=0.33)
 
         self.track2_name = Entry(self)
         self.track2_name.pack()
-        self.track2_name.place(relx=0.66,rely=0.32)
+        self.track2_name.place(relx=0.68,rely=0.33)
         self.label_2 = Label(self,text='Drum 2')
         self.label_2.pack()
-        self.label_2.place(relx=0.6,rely=0.32)
+        self.label_2.place(relx=0.6,rely=0.33)
 
         self.track3_name = Entry(self)
         self.track3_name.pack()
-        self.track3_name.place(relx=0.20,rely=0.42)
+        self.track3_name.place(relx=0.20,rely=0.44)
         self.label_3 = Label(self,text='Bass 1')
         self.label_3.pack()
-        self.label_3.place(relx=0.14,rely=0.42)
+        self.label_3.place(relx=0.12,rely=0.44)
 
         self.track4_name = Entry(self)
         self.track4_name.pack()
-        self.track4_name.place(relx=0.66,rely=0.42)
+        self.track4_name.place(relx=0.68,rely=0.44)
         self.label_4 = Label(self,text='Bass 2')
         self.label_4.pack()
-        self.label_4.place(relx=0.6,rely=0.42)
+        self.label_4.place(relx=0.6,rely=0.44)
 
         self.START = Button(self)
         self.START["text"] = "START"
@@ -348,34 +375,48 @@ class Application(Frame):
         self.LOAD["fg"]   = "black"
         self.LOAD["command"] =  lambda: self.process_drums()
         self.LOAD.pack()
-        self.LOAD.place(relx=0.45,rely=0.32)
+        self.LOAD.place(relx=0.45,rely=0.33)
 
         self.LOAD = Button(self)
         self.LOAD["text"] = "LOAD BASS"
         self.LOAD["fg"]   = "black"
         self.LOAD["command"] =  lambda: self.process_bass()
         self.LOAD.pack()
-        self.LOAD.place(relx=0.45,rely=0.42)
+        self.LOAD.place(relx=0.45,rely=0.44)
 
-        self.FADEDRUM = Scale(self,from_=100, to=0,length=300, orient='horizontal')
+        self.RESETDRUM = Button(self)
+        self.RESETDRUM["text"] = "RESET D"
+        self.RESETDRUM["fg"]   = "black"
+        self.RESETDRUM["command"] =  lambda: self.reset_drum()
+        self.RESETDRUM.pack()
+        self.RESETDRUM.place(relx=0.02,rely=0.3)
+
+        self.RESETBASS = Button(self)
+        self.RESETBASS["text"] = "RESET B"
+        self.RESETBASS["fg"]   = "black"
+        self.RESETBASS["command"] =  lambda: self.reset_bass()
+        self.RESETBASS.pack()
+        self.RESETBASS.place(relx=0.92,rely=0.51)
+
+        self.FADEDRUM = Scale(self,from_=100, to=0,length=300, orient='horizontal', showvalue=0)
         self.FADEDRUM.set(0)
         self.FADEDRUM.pack()
-        self.FADEDRUM.place(relx=0.30,rely=0.25)
+        self.FADEDRUM.place(relx=0.30,rely=0.29)
 
         self.DRUMVOL = Scale(self,from_=150, to=0,length=150, orient='vertical')
         self.DRUMVOL.set(50)
         self.DRUMVOL.pack()
-        self.DRUMVOL.place(relx=0.01,rely=0.35)
+        self.DRUMVOL.place(relx=0.01,rely=0.34)
 
-        self.FADEBASS = Scale(self,from_=100, to=0,length=300, orient='horizontal')
+        self.FADEBASS = Scale(self,from_=100, to=0,length=300, orient='horizontal', showvalue=0)
         self.FADEBASS.set(0)
         self.FADEBASS.pack()
-        self.FADEBASS.place(relx=0.30,rely=0.47)
+        self.FADEBASS.place(relx=0.30,rely=0.49)
 
         self.BASSVOL = Scale(self,from_=150, to=0,length=150, orient='vertical')
         self.BASSVOL.set(50)
         self.BASSVOL.pack()
-        self.BASSVOL.place(relx=0.93,rely=0.35)
+        self.BASSVOL.place(relx=0.93,rely=0.3)
 
 
 
@@ -421,6 +462,8 @@ class Application(Frame):
         global bass_gain 
         global smallest_bass
         global smallest_drums
+        global drum_bypass
+        global bass_bypass
 
         smallest = np.min((smallest_bass,smallest_drums))
 
@@ -428,6 +471,10 @@ class Application(Frame):
         bassalpha = self.FADEBASS.get()/100.
         drum_gain = self.DRUMVOL.get()/50.
         bass_gain = self.BASSVOL.get()/50.
+
+        drum_bypass = self.drum_bypass.get()
+        bass_bypass = self.bass_bypass.get()
+        
         if make_audio:
             proc_ind = np.mod(proc_ind,smallest)
             make_sine2(NUM_CHUNKS,proc_ind)

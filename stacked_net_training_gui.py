@@ -114,7 +114,7 @@ class Application(Frame):
         np.random.shuffle(orig_frames_2)
         len_frames = orig_frames_2.shape[0]
 
-        self.frames = np.hstack((orig_frames_1[:10000,:],orig_frames_2[:10000,:])) ##Requires 4 minutes of audio
+        self.frames = np.hstack((orig_frames_1[:int(self.datasize.get()),:],orig_frames_2[:int(self.datasize.get()),:])) 
 
         orig_frames_1 = None
         orig_frames_2 = None
@@ -238,7 +238,7 @@ class Application(Frame):
         else:
             self.network.compile(optimizer=Adam(lr=adam_rate), loss=self.my_mse2)
             self.network.fit(x=train_data, y=train_target,
-                    epochs=self.n_epochs,
+                    epochs=int(self.epochs.get()),
                     batch_size=200,
                     shuffle=True,
                     validation_data=(val_data, val_target)
@@ -352,54 +352,97 @@ class Application(Frame):
         
 
     def createWidgets(self):
+
+        self.DATATEXT = Label(self, text='Minimum Length of Dataset')
+        self.DATATEXT.pack()
+        self.DATATEXT.place(relx=0.35,rely=0.05)
+
+        self.EPOCHTEXT = Label(self, text='Number of Iterations to Train the Network')
+        self.EPOCHTEXT.pack()
+        self.EPOCHTEXT.place(relx=0.35,rely=0.15)
+        
         self.QUIT = Button(self)
         self.QUIT["text"] = "QUIT"
         self.QUIT["fg"]   = "red"
         self.QUIT["command"] =  self.quit
         self.QUIT.pack()
-        self.QUIT.place(relx=0.45,rely=0.95)
+        self.QUIT.place(relx=0.45,rely=0.65)
 
         self.model_name = Entry(self)
         self.model_name.pack()
-        self.model_name.place(relx=0.4,rely=0.37)
+        self.model_name.place(relx=0.4,rely=0.52)
         self.label = Label(self,text='Output Model Name')
         self.label.pack()
-        self.label.place(relx=0.25,rely=0.37)
+        self.label.place(relx=0.25,rely=0.52)
 
         self.track1_name = Entry(self)
         self.track1_name.pack()
-        self.track1_name.place(relx=0.20,rely=0.32)
+        self.track1_name.place(relx=0.40,rely=0.32)
         self.label_1 = Label(self,text='Drum Audio')
         self.label_1.pack()
-        self.label_1.place(relx=0.14,rely=0.32)
+        self.label_1.place(relx=0.30,rely=0.32)
 
         self.track3_name = Entry(self)
         self.track3_name.pack()
-        self.track3_name.place(relx=0.20,rely=0.42)
+        self.track3_name.place(relx=0.40,rely=0.42)
         self.label_3 = Label(self,text='Bass Audio')
         self.label_3.pack()
-        self.label_3.place(relx=0.14,rely=0.42)
+        self.label_3.place(relx=0.30,rely=0.42)
 
         self.START = Button(self)
         self.START["text"] = "START"
         self.START["fg"]   = "green"
         self.START["command"] =  lambda: self.start_and_train()
         self.START.pack()
-        self.START.place(relx=0.45,rely=0.9)
+        self.START.place(relx=0.45,rely=0.6)
 
         self.LOAD = Button(self)
         self.LOAD["text"] = "LOAD DRUMS"
         self.LOAD["fg"]   = "black"
         self.LOAD["command"] =  lambda: self.process_drums()
         self.LOAD.pack()
-        self.LOAD.place(relx=0.45,rely=0.32)
+        self.LOAD.place(relx=0.6,rely=0.32)
 
         self.LOAD = Button(self)
         self.LOAD["text"] = "LOAD BASS"
         self.LOAD["fg"]   = "black"
         self.LOAD["command"] =  lambda: self.process_bass()
         self.LOAD.pack()
-        self.LOAD.place(relx=0.45,rely=0.42)
+        self.LOAD.place(relx=0.6,rely=0.42)
+
+    def createButtons(self):
+        global chroma_val
+        self.datasize = IntVar()
+        self.datasize.set(2500)
+        NOTE_OPTIONS = [
+        ('one minute',2500),
+        ('four minutes',10000),
+        ('ten minutes',25000)
+        ]
+        xx = 1.3
+
+        for text, val in NOTE_OPTIONS:
+            b = Radiobutton(self, text=text, value=val, variable=self.datasize)
+            b.pack()
+            b.place(relx=xx/5.,rely=0.1)
+            xx+=1
+
+    def createEpochButtons(self):
+        global chroma_val
+        self.epochs = IntVar()
+        self.epochs.set(50)
+        NOTE_OPTIONS = [
+        ('50 iterations',50),
+        ('150 iterations',150),
+        ('300 iterations',300)
+        ]
+        xx = 1.3
+
+        for text, val in NOTE_OPTIONS:
+            b = Radiobutton(self, text=text, value=val, variable=self.epochs)
+            b.pack()
+            b.place(relx=xx/5.,rely=0.2)
+            xx+=1
 
 
     def __init__(self, master=None):
@@ -425,9 +468,11 @@ class Application(Frame):
         make_audio = False
         POLL_TIME = 1
 
-        Frame.__init__(self, master,width=800, height=800)
+        Frame.__init__(self, master,width=1000, height=800)
         self.pack()
         self.createWidgets()
+        self.createButtons()
+        self.createEpochButtons()
         recorded_scales = []
         self.Args = Args()
 
